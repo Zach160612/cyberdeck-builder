@@ -1,0 +1,28 @@
+name: Build cyberdeck ROM
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install devkitPro (pacman)
+        run: |
+          curl -L -o devkitpro-pacman-installer.arm64.pkg https://github.com/devkitPro/devkitPro-pacman/releases/download/v2024.12/devkitpro-pacman-installer.arm64.pkg
+          sudo installer -pkg devkitpro-pacman-installer.arm64.pkg -target /
+          echo "/opt/devkitpro/devkitARM/bin" >> $GITHUB_PATH
+      - name: Install nds-dev package
+        run: |
+          sudo dkp-pacman -Sy
+          sudo dkp-pacman -S nds-dev
+      - name: Build the project
+        working-directory: ./dsi_cyberdeck
+        run: |
+          make clean && make
+      - name: Upload ROM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyberdeck-rom
+          path: ./dsi_cyberdeck/cyberdeck.nds
